@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retail Credit Risk — Early-Warning Radar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12161D;
+    --bg-panel:#1A2029;
+    --bg-panel-hover:#1F2730;
+    --border:#272F39;
+    --border-soft:#1F2630;
+    --text-primary:#ECE8E1;
+    --text-secondary:#9AA3AE;
+    --text-tertiary:#5C6675;
+    --accent:#5FA8D3;
+    --green:#5BAE8E;
+    --green-bg:rgba(91,174,142,0.13);
+    --watch:#D1AC3A;
+    --watch-bg:rgba(209,172,58,0.14);
+    --amber:#DB9A4C;
+    --amber-bg:rgba(219,154,76,0.14);
+    --red:#CC5C49;
+    --red-bg:rgba(204,92,73,0.16);
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{background:var(--bg);}
+  body{
+    color:var(--text-primary);
+    font-family:var(--font-body);
+    line-height:1.55;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+    background-size:26px 26px;
+    padding:0 0 64px;
+  }
+  a{color:var(--accent);}
+  button{font-family:inherit;cursor:pointer;}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+
+  .wrap{max-width:1140px;margin:0 auto;padding:0 28px;}
+
+  /* ---------- Header ---------- */
+  header{
+    padding:52px 0 28px;
+    border-bottom:1px solid var(--border-soft);
+    position:relative;
+    overflow:hidden;
+  }
+  .sweep{
+    position:absolute;top:0;left:-20%;width:40%;height:100%;
+    background:linear-gradient(90deg, transparent, rgba(95,168,211,0.08), transparent);
+    pointer-events:none;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .sweep.run{ animation: sweepMove 1.4s ease-out 1; }
+  }
+  @keyframes sweepMove{
+    from{ left:-30%; }
+    to{ left:110%; }
+  }
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:0.14em;
+    color:var(--accent);
+    text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  h1{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(28px,4vw,42px);
+    letter-spacing:-0.01em;
+    margin-bottom:14px;
+  }
+  .lede{
+    color:var(--text-secondary);
+    max-width:620px;
+    font-size:15.5px;
+    margin-bottom:22px;
+  }
+  .disclaimer{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-left:3px solid var(--accent);
+    border-radius:6px;
+    padding:12px 16px;
+    font-size:13.5px;
+    color:var(--text-secondary);
+    max-width:680px;
+    margin-bottom:30px;
+  }
+  .disclaimer strong{color:var(--text-primary);}
+
+  .posture-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    align-items:stretch;
+    margin-bottom:24px;
+  }
+  .posture-card{
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:16px 20px;
+    flex:1 1 220px;
+  }
+  .posture-card.headline{
+    flex:2 1 320px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+  .posture-label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-tertiary);
+    margin-bottom:6px;
+  }
+  .posture-value{
+    font-family:var(--font-mono);
+    font-size:26px;
+    font-weight:500;
+  }
+  .posture-headline-text{
+    font-family:var(--font-display);
+    font-size:18px;
+    font-weight:600;
+    line-height:1.35;
+  }
+  .posture-card[data-status="green"] .posture-value{color:var(--green);}
+  .posture-card[data-status="watch"] .posture-value{color:var(--watch);}
+  .posture-card[data-status="amber"] .posture-value{color:var(--amber);}
+  .posture-card[data-status="red"] .posture-value{color:var(--red);}
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:18px;
+    font-size:12.5px;
+    color:var(--text-secondary);
+  }
+  .legend-item{display:flex;align-items:center;gap:7px;}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0;}
+  .dot.green{background:var(--green);}
+  .dot.watch{background:var(--watch);}
+  .dot.amber{background:var(--amber);}
+  .dot.red{background:var(--red);}
+
+  /* ---------- Filters ---------- */
+  .filters{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin:30px 0 26px;
+  }
+  .filter-btn{
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--text-secondary);
+    border-radius:999px;
+    padding:8px 16px;
+    font-size:13px;
+    font-family:var(--font-body);
+    transition:border-color .15s, color .15s, background .15s;
+  }
+  .filter-btn:hover{border-color:var(--accent);color:var(--text-primary);}
+  .filter-btn.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#0E1217;
+    font-weight:600;
+  }
+
+  /* ---------- Cards grid ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(260px,1fr));
+    gap:16px;
+  }
+  .card{
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:18px 18px 16px;
+    text-align:left;
+    color:var(--text-primary);
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    transition:transform .15s, border-color .15s, background .15s;
+    opacity:0;
+    transform:translateY(6px);
+  }
+  .card.shown{opacity:1;transform:translateY(0);}
+  @media (prefers-reduced-motion: no-preference){
+    .card{transition:transform .35s ease, border-color .15s, background .15s, opacity .35s ease;}
+  }
+  .card:hover{border-color:var(--accent);background:var(--bg-panel-hover);transform:translateY(-2px);}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .card-eyebrow{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:0.07em;
+    text-transform:uppercase;
+    color:var(--text-tertiary);
+  }
+  .card-name{
+    font-family:var(--font-display);
+    font-size:15.5px;
+    font-weight:600;
+    margin-top:3px;
+    line-height:1.3;
+  }
+  .pill{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    padding:4px 9px;
+    border-radius:999px;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .pill.green{color:var(--green);background:var(--green-bg);}
+  .pill.watch{color:var(--watch);background:var(--watch-bg);}
+  .pill.amber{color:var(--amber);background:var(--amber-bg);}
+  .pill.red{color:var(--red);background:var(--red-bg);}
+
+  .card-value-row{display:flex;align-items:baseline;gap:8px;}
+  .card-value{font-family:var(--font-mono);font-size:26px;font-weight:500;}
+  .card-delta{font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);}
+
+  .spark{width:100%;height:60px;}
+  .card-foot{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:12px;color:var(--text-tertiary);
+    border-top:1px solid var(--border-soft);
+    padding-top:10px;
+  }
+  .card-foot .arrow{color:var(--accent);font-family:var(--font-mono);}
+
+  /* ---------- Modal ---------- */
+  .overlay{
+    position:fixed;inset:0;
+    background:rgba(8,10,14,0.72);
+    display:none;
+    align-items:center;justify-content:center;
+    padding:24px;
+    z-index:50;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    max-width:620px;
+    width:100%;
+    max-height:88vh;
+    overflow-y:auto;
+    padding:28px 28px 26px;
+    position:relative;
+  }
+  .modal-close{
+    position:absolute;top:18px;right:18px;
+    background:transparent;border:1px solid var(--border);
+    color:var(--text-secondary);
+    width:30px;height:30px;border-radius:50%;
+    font-size:15px;line-height:1;
+  }
+  .modal-close:hover{color:var(--text-primary);border-color:var(--accent);}
+  .modal-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:6px;}
+  .modal h2{font-family:var(--font-display);font-size:21px;font-weight:600;margin-bottom:10px;max-width:90%;}
+  .modal-value-row{display:flex;align-items:baseline;gap:10px;margin-bottom:18px;}
+  .modal-value{font-family:var(--font-mono);font-size:32px;font-weight:500;}
+
+  .view-toggle{display:flex;gap:6px;margin-bottom:14px;}
+  .view-btn{
+    background:transparent;border:1px solid var(--border);color:var(--text-secondary);
+    border-radius:999px;padding:6px 14px;font-size:12.5px;font-family:var(--font-body);
+    transition:border-color .15s, color .15s, background .15s;
+  }
+  .view-btn:hover{border-color:var(--accent);color:var(--text-primary);}
+  .view-btn.active{background:var(--accent);border-color:var(--accent);color:#0E1217;font-weight:600;}
+
+  .modal-chart-wrap{margin-bottom:20px;}
+  .modal-chart{width:100%;height:130px;}
+  .modal-table-wrap{margin-bottom:20px;display:none;}
+  .modal-table-wrap.shown{display:block;}
+  .modal-chart-wrap.hidden{display:none;}
+  .history-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .history-table th{
+    text-align:left;font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.05em;
+    text-transform:uppercase;color:var(--text-tertiary);padding:6px 10px;border-bottom:1px solid var(--border);
+  }
+  .history-table td{padding:6px 10px;border-bottom:1px solid var(--border-soft);font-family:var(--font-mono);}
+  .history-table tr:last-child td{color:var(--text-primary);font-weight:600;background:rgba(95,168,211,0.07);}
+  .history-table tr:hover td{background:var(--bg-panel-hover);}
+  .history-foot{display:flex;gap:18px;font-size:11.5px;color:var(--text-tertiary);margin-top:8px;font-family:var(--font-mono);}
+  .modal-desc{font-size:14px;color:var(--text-secondary);margin-bottom:18px;}
+  .gov-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+  .gov-box{background:var(--bg);border:1px solid var(--border-soft);border-radius:8px;padding:12px 14px;}
+  .gov-label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:5px;}
+  .gov-text{font-size:13.5px;}
+  .action-box{
+    background:var(--bg);border:1px solid var(--border-soft);border-radius:8px;
+    padding:14px 16px;font-size:13.5px;color:var(--text-primary);
+  }
+  .action-label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
+
+  /* ---------- Footer ---------- */
+  footer{margin-top:54px;padding-top:34px;border-top:1px solid var(--border-soft);}
+  footer h3{font-family:var(--font-display);font-size:16px;font-weight:600;margin-bottom:8px;}
+  footer p{font-size:13.5px;color:var(--text-secondary);max-width:680px;margin-bottom:18px;}
+  .colophon{font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);margin-top:10px;}
+
+  @media (max-width:560px){
+    .gov-grid{grid-template-columns:1fr;}
+    .wrap{padding:0 18px;}
+    header{padding:36px 0 22px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="sweep" id="sweep"></div>
+    <div class="eyebrow">Retail Credit Risk · Illustrative Portfolio</div>
+    <h1>Early-Warning Radar</h1>
+    <p class="lede">A lightweight monitoring framework for a retail credit portfolio: eight indicators checked against risk-appetite thresholds, with a trend check that flags building risk before any limit is actually breached.</p>
+    <div class="disclaimer">
+      <span>⚠</span>
+      <span><strong>Synthetic data only.</strong> Every figure on this page is illustrative and generated for this exercise — no real customer, portfolio, or company data (Revolut's or anyone else's) has been used anywhere in this tool.</span>
+    </div>
+
+    <div class="posture-row" id="postureRow"></div>
+
+    <div class="legend">
+      <span class="legend-item"><span class="dot green"></span>Green — within appetite</span>
+      <span class="legend-item"><span class="dot watch"></span>Watch — early trend signal</span>
+      <span class="legend-item"><span class="dot amber"></span>Amber — second-line review</span>
+      <span class="legend-item"><span class="dot red"></span>Red — Risk Committee escalation</span>
+    </div>
+  </header>
+
+  <nav class="filters" id="filters"></nav>
+  <main class="grid" id="grid"></main>
+
+  <footer>
+    <h3>How the early-warning logic works</h3>
+    <p>Each indicator carries two calibrated thresholds — a green/amber boundary and an amber/red boundary — the same structure as a standard risk appetite statement. But a static threshold check only tells you about a problem once it has already arrived. So indicators still inside the green zone are also checked for a building trend: three consecutive months of worsening readings with a meaningful relative increase get flagged <strong style="color:var(--watch)">Watch</strong> — a lead indicator, ahead of any breach. That's the actual point of an early-warning framework over a plain RAG dashboard: time to act before escalation is forced.</p>
+    <h3>Why these eight indicators</h3>
+    <p>They're grouped the way a risk committee would expect to see them: credit performance (delinquency, charge-offs), behavioural and affordability signals (utilisation, minimum-payment reliance), concentration (geography, thin-file origination), and macro/external pressure (unemployment sensitivity, cost-of-living). Each card carries an owner and an escalation tier mapped to the three lines of defence.</p>
+    <p class="colophon">Built as a personal exercise applying a risk-appetite and early-warning framework to a retail credit context, with assistance from Claude. All data is synthetic.</p>
+  </footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal" role="dialog" aria-modal="true">
+    <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const MONTHS = ["Jul'25","Aug'25","Sep'25","Oct'25","Nov'25","Dec'25","Jan'26","Feb'26","Mar'26","Apr'26","May'26","Jun'26"];
+
+const DATA = [
+  {
+    id:"dpd30", category:"credit", categoryLabel:"Credit Performance",
+    name:"30+ Days Past Due Rate", unit:"%", isIndex:false,
+    description:"Share of outstanding retail credit balances with a payment 30 or more days overdue.",
+    data:[2.05,2.08,2.10,2.12,2.15,2.18,2.20,2.25,2.35,2.55,2.85,3.25],
+    thresholds:{green:2.5, amber:3.2},
+    amberAction:"Second-line review of affected vintages within two weeks; assess whether limit calibration needs tightening for the cohorts driving the move.",
+    redAction:"Escalate to Risk Committee. Review limit calibration and originations criteria for affected vintages; assess whether the current risk appetite threshold needs re-papering."
+  },
+  {
+    id:"co", category:"credit", categoryLabel:"Credit Performance",
+    name:"Net Charge-off Rate", unit:"%", isIndex:false,
+    description:"Annualised net write-offs as a share of average outstanding balances.",
+    data:[1.10,1.12,1.11,1.15,1.13,1.16,1.18,1.20,1.19,1.22,1.25,1.30],
+    thresholds:{green:1.4, amber:1.8},
+    amberAction:"Second-line review of loss curves by segment; confirm provisioning assumptions still hold.",
+    redAction:"Escalate to Risk Committee; revisit provisioning model and origination policy for the affected segments."
+  },
+  {
+    id:"util", category:"behavioural", categoryLabel:"Behavioural & Affordability",
+    name:"Revolving Utilisation Rate", unit:"%", isIndex:false,
+    description:"Average share of approved revolving credit limit drawn by customers.",
+    data:[58,58.5,59,59.2,59.5,60,60.8,61.5,62.5,64,66,68.5],
+    thresholds:{green:65, amber:72},
+    amberAction:"Second-line review of utilisation by segment; consider proactive limit management for high-utilisation cohorts before it becomes an affordability issue.",
+    redAction:"Escalate to Risk Committee; pause limit increases for high-utilisation segments and review affordability assumptions."
+  },
+  {
+    id:"minpay", category:"behavioural", categoryLabel:"Behavioural & Affordability",
+    name:"Minimum-Payment-Only Share", unit:"%", isIndex:false,
+    description:"Share of customers who paid only the contractual minimum due in the month.",
+    data:[22,22.2,22.1,22.4,22.3,22.6,22.8,23.0,23.3,23.9,24.8,26.0],
+    thresholds:{green:27, amber:31},
+    amberAction:"Second-line review of affected segments; cross-check against utilisation and delinquency trends for compounding stress.",
+    redAction:"Escalate to Risk Committee; treat as a leading affordability stress signal and review underwriting assumptions."
+  },
+  {
+    id:"geo", category:"concentration", categoryLabel:"Concentration",
+    name:"Top-3 Geography Concentration", unit:"%", isIndex:false,
+    description:"Share of total retail credit exposure held in the three largest geographic markets.",
+    data:[34,34.2,34.1,34.5,34.3,34.6,34.8,35.0,35.2,35.5,35.7,36.0],
+    thresholds:{green:38, amber:43},
+    amberAction:"Second-line review of geographic diversification targets; confirm limits still reflect current risk appetite.",
+    redAction:"Escalate to Risk Committee; reassess geographic limit structure."
+  },
+  {
+    id:"ntc", category:"concentration", categoryLabel:"Concentration",
+    name:"New-to-Credit Origination Share", unit:"%", isIndex:false,
+    description:"Share of new accounts opened by thin-file applicants with limited credit history.",
+    data:[12,12.1,12.0,12.3,12.2,12.5,12.8,13.2,13.8,14.6,15.6,16.8],
+    thresholds:{green:16, amber:20},
+    amberAction:"Second-line review of new-to-credit underwriting criteria; assess interaction with affordability checks, particularly for newer product lines.",
+    redAction:"Escalate to Risk Committee; review origination policy and underwriting criteria for thin-file applicants."
+  },
+  {
+    id:"unemp", category:"macro", categoryLabel:"Macro & External",
+    name:"Unemployment-Sensitive Exposure", unit:"%", isIndex:false,
+    description:"Share of the portfolio held in segments historically most sensitive to rising unemployment.",
+    data:[18,18.1,18.0,18.2,18.1,18.3,18.2,18.4,18.3,18.5,18.4,18.6],
+    thresholds:{green:22, amber:26},
+    amberAction:"Second-line review ahead of the next macro stress test; revisit segment definitions.",
+    redAction:"Escalate to Risk Committee; bring forward the next stress-testing cycle."
+  },
+  {
+    id:"col", category:"macro", categoryLabel:"Macro & External",
+    name:"Cost-of-Living Pressure Index", unit:" pts", isIndex:true,
+    description:"Synthetic composite proxy for household cost-of-living pressure (indexed, baseline = 100).",
+    data:[101,101.5,102,103,103.5,104.5,105.5,107,109,112,116,121],
+    thresholds:{green:108, amber:118},
+    amberAction:"Second-line review of affordability buffers used in underwriting; flag to first-line business teams.",
+    redAction:"Escalate to Risk Committee; incorporate into the next stress-testing cycle and review affordability assumptions in underwriting policy."
+  }
+];
+
+const CATEGORIES = [
+  {key:"all", label:"All indicators"},
+  {key:"credit", label:"Credit Performance"},
+  {key:"behavioural", label:"Behavioural & Affordability"},
+  {key:"concentration", label:"Concentration"},
+  {key:"macro", label:"Macro & External"}
+];
+
+function getStatus(ind){
+  const d = ind.data;
+  const current = d[d.length-1];
+  const {green, amber} = ind.thresholds;
+  if(current >= amber) return "red";
+  if(current >= green) return "amber";
+  const last3 = d.slice(-3);
+  const monotonicUp = last3[0] < last3[1] && last3[1] < last3[2];
+  const relChange = (last3[2] - last3[0]) / Math.abs(last3[0]);
+  if(monotonicUp && relChange >= 0.07) return "watch";
+  return "green";
+}
+
+function governance(status){
+  switch(status){
+    case "green": return {owner:"First line — business as usual", tier:"Standard monthly MI"};
+    case "watch": return {owner:"First line, flagged for second-line awareness", tier:"Watch — confirm next cycle"};
+    case "amber": return {owner:"Second line — Risk function review", tier:"Second-line escalation"};
+    case "red": return {owner:"Risk Committee", tier:"Committee escalation"};
+  }
+}
+
+function actionFor(ind, status){
+  if(status === "red") return ind.redAction;
+  if(status === "amber") return ind.amberAction;
+  if(status === "watch") return `Building trend within the green zone for ${ind.name.toLowerCase()} — flag to second line for awareness and re-check at the next reporting cycle before any escalation is warranted.`;
+  return "Within appetite. Continue standard monthly monitoring; no action required.";
+}
+
+function fmt(val, ind){
+  return ind.isIndex ? Math.round(val) + ind.unit : val.toFixed(1) + ind.unit;
+}
+
+function buildSpark(ind, status, big){
+  const d = ind.data;
+  const w = big ? 560 : 220, h = big ? 120 : 60;
+  const padTop = big ? 8 : 4, padBottom = big ? 18 : 6;
+  const allVals = [...d, ind.thresholds.green, ind.thresholds.amber];
+  const minV = Math.min(...allVals) * 0.97;
+  const maxV = Math.max(...allVals) * 1.04;
+  const x = i => (i/(d.length-1)) * w;
+  const y = v => h - padBottom - ((v - minV)/(maxV - minV)) * (h - padTop - padBottom);
+
+  const points = d.map((v,i) => `${x(i)},${y(v)}`).join(" ");
+  const areaPoints = `0,${h} ` + points + ` ${w},${h}`;
+
+  const colorVar = status === "red" ? "var(--red)" : status === "amber" ? "var(--amber)" : status === "watch" ? "var(--watch)" : "var(--green)";
+
+  const gLine = `<line x1="0" y1="${y(ind.thresholds.green)}" x2="${w}" y2="${y(ind.thresholds.green)}" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>`;
+  const aLine = `<line x1="0" y1="${y(ind.thresholds.amber)}" x2="${w}" y2="${y(ind.thresholds.amber)}" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>`;
+
+  const labels = big ? `
+    <text x="2" y="${y(ind.thresholds.green)-4}" font-family="IBM Plex Mono" font-size="9" fill="var(--text-tertiary)">green/amber</text>
+    <text x="2" y="${y(ind.thresholds.amber)-4}" font-family="IBM Plex Mono" font-size="9" fill="var(--text-tertiary)">amber/red</text>
+  ` : "";
+
+  return `<svg class="${big?'modal-chart':'spark'}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    ${gLine}${aLine}
+    <polygon points="${areaPoints}" fill="${colorVar}" opacity="0.12"/>
+    <polyline points="${points}" fill="none" stroke="${colorVar}" stroke-width="${big?2.5:2}" stroke-linejoin="round" stroke-linecap="round"/>
+    ${labels}
+  </svg>`;
+}
+
+function buildHistoryTable(ind){
+  const rows = ind.data.map((v,i) => `<tr><td>${MONTHS[i]}</td><td>${fmt(v, ind)}</td></tr>`).join("");
+  return `
+    <table class="history-table">
+      <thead><tr><th>Month</th><th>Value</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="history-foot">
+      <span>Green / amber threshold: ${fmt(ind.thresholds.green, ind)}</span>
+      <span>Amber / red threshold: ${fmt(ind.thresholds.amber, ind)}</span>
+    </div>
+  `;
+}
+
+let currentFilter = "all";
+
+function renderFilters(){
+  const el = document.getElementById("filters");
+  el.innerHTML = CATEGORIES.map(c => {
+    const count = c.key === "all" ? DATA.length : DATA.filter(d => d.category === c.key).length;
+    return `<button class="filter-btn ${c.key===currentFilter?'active':''}" data-cat="${c.key}">${c.label} (${count})</button>`;
+  }).join("");
+  el.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentFilter = btn.dataset.cat;
+      renderFilters();
+      renderGrid();
+    });
+  });
+}
+
+function renderPosture(){
+  const counts = {green:0, watch:0, amber:0, red:0};
+  DATA.forEach(ind => counts[getStatus(ind)]++);
+  let headline, status;
+  if(counts.red > 0){
+    headline = `Elevated — ${counts.red} indicator${counts.red>1?'s':''} require${counts.red>1?'':'s'} Risk Committee escalation`;
+    status = "red";
+  } else if(counts.amber > 0){
+    headline = `Caution — ${counts.amber} indicator${counts.amber>1?'s':''} flagged for second-line review`;
+    status = "amber";
+  } else if(counts.watch > 0){
+    headline = `Stable, with ${counts.watch} early signal${counts.watch>1?'s':''} to keep watching`;
+    status = "watch";
+  } else {
+    headline = "Stable — all indicators within appetite";
+    status = "green";
+  }
+
+  const el = document.getElementById("postureRow");
+  el.innerHTML = `
+    <div class="posture-card headline" data-status="${status}">
+      <div class="posture-label">Portfolio posture</div>
+      <div class="posture-headline-text">${headline}</div>
+    </div>
+    <div class="posture-card" data-status="green"><div class="posture-label">Green</div><div class="posture-value">${counts.green}</div></div>
+    <div class="posture-card" data-status="watch"><div class="posture-label">Watch</div><div class="posture-value">${counts.watch}</div></div>
+    <div class="posture-card" data-status="amber"><div class="posture-label">Amber</div><div class="posture-value">${counts.amber}</div></div>
+    <div class="posture-card" data-status="red"><div class="posture-label">Red</div><div class="posture-value">${counts.red}</div></div>
+  `;
+}
+
+function renderGrid(){
+  const grid = document.getElementById("grid");
+  const list = currentFilter === "all" ? DATA : DATA.filter(d => d.category === currentFilter);
+  grid.innerHTML = list.map(ind => {
+    const status = getStatus(ind);
+    const current = ind.data[ind.data.length-1];
+    const prev = ind.data[ind.data.length-2];
+    const delta = current - prev;
+    const deltaStr = (delta >= 0 ? "+" : "") + (ind.isIndex ? delta.toFixed(0) : delta.toFixed(1)) + (ind.isIndex ? " pts" : " pts vs last month");
+    return `
+      <button class="card" data-id="${ind.id}">
+        <div class="card-top">
+          <div>
+            <div class="card-eyebrow">${ind.categoryLabel}</div>
+            <div class="card-name">${ind.name}</div>
+          </div>
+          <span class="pill ${status}">${status}</span>
+        </div>
+        <div class="card-value-row">
+          <span class="card-value">${fmt(current, ind)}</span>
+          <span class="card-delta">${deltaStr}</span>
+        </div>
+        ${buildSpark(ind, status, false)}
+        <div class="card-foot">
+          <span>${governance(status).tier}</span>
+          <span class="arrow">View detail →</span>
+        </div>
+      </button>
+    `;
+  }).join("");
+
+  grid.querySelectorAll(".card").forEach(card => {
+    card.addEventListener("click", () => openModal(card.dataset.id));
+  });
+
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  requestAnimationFrame(() => {
+    grid.querySelectorAll(".card").forEach((card, i) => {
+      if(reduce){ card.classList.add("shown"); return; }
+      setTimeout(() => card.classList.add("shown"), i * 45);
+    });
+  });
+}
+
+function openModal(id){
+  const ind = DATA.find(d => d.id === id);
+  const status = getStatus(ind);
+  const current = ind.data[ind.data.length-1];
+  const gov = governance(status);
+  const body = document.getElementById("modalBody");
+  body.innerHTML = `
+    <div class="modal-eyebrow">${ind.categoryLabel}</div>
+    <h2>${ind.name}</h2>
+    <div class="modal-value-row">
+      <span class="modal-value">${fmt(current, ind)}</span>
+      <span class="pill ${status}">${status}</span>
+    </div>
+    <div class="view-toggle">
+      <button class="view-btn active" data-view="chart">Chart</button>
+      <button class="view-btn" data-view="table">Table</button>
+    </div>
+    <div class="modal-chart-wrap" id="viewChart">${buildSpark(ind, status, true)}</div>
+    <div class="modal-table-wrap" id="viewTable">${buildHistoryTable(ind)}</div>
+    <p class="modal-desc">${ind.description}</p>
+    <div class="gov-grid">
+      <div class="gov-box">
+        <div class="gov-label">Owner</div>
+        <div class="gov-text">${gov.owner}</div>
+      </div>
+      <div class="gov-box">
+        <div class="gov-label">Escalation tier</div>
+        <div class="gov-text">${gov.tier}</div>
+      </div>
+    </div>
+    <div class="action-box">
+      <div class="action-label">Recommended action</div>
+      ${actionFor(ind, status)}
+    </div>
+  `;
+  body.querySelectorAll(".view-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      body.querySelectorAll(".view-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const isChart = btn.dataset.view === "chart";
+      document.getElementById("viewChart").classList.toggle("hidden", !isChart);
+      document.getElementById("viewTable").classList.toggle("shown", !isChart);
+    });
+  });
+  document.getElementById("overlay").classList.add("open");
+  document.getElementById("modalClose").focus();
+}
+
+function closeModal(){
+  document.getElementById("overlay").classList.remove("open");
+}
+document.getElementById("modalClose").addEventListener("click", closeModal);
+document.getElementById("overlay").addEventListener("click", e => {
+  if(e.target.id === "overlay") closeModal();
+});
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape") closeModal();
+});
+
+renderPosture();
+renderFilters();
+renderGrid();
+
+if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+  requestAnimationFrame(() => document.getElementById("sweep").classList.add("run"));
+}
+</script>
+</body>
+</html>
